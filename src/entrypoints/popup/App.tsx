@@ -189,7 +189,6 @@ export const App: React.FC = () => {
         width: '420px',
         boxSizing: 'border-box',
         background: '#ffffff',
-        border: '1px solid #2563eb',
       }}
     >
       {view === 'report' && currentScore ? (
