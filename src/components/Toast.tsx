@@ -10,11 +10,11 @@ interface Props {
 
 const VERDICTS = {
   green: {
-    border: '#16a34a',
-    iconBg: '#dcfce7',
+    border: '#178800',
+    iconBg: '#d5ead1',
     icon: (
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-        <circle cx="11" cy="11" r="11" fill="#16a34a" />
+        <circle cx="11" cy="11" r="11" fill="#178800" />
         <path d="M6 11.5l3.5 3.5 6.5-7" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),

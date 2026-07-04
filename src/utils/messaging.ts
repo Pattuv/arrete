@@ -25,7 +25,7 @@ export type Message =
   | { type: 'SCORE_REQUEST'; url: string; urgencySignals: string[] }
   | { type: 'SCORE_RESPONSE'; result: ScoredResult }
   | { type: 'MANUAL_CHECK'; url: string }
-  | { type: 'GET_CURRENT_SCORE'; tabId?: number }
+  | { type: 'GET_SCORE_FOR_URL'; url: string }
   | { type: 'CURRENT_SCORE_RESPONSE'; result: ScoredResult | null }
   | { type: 'GET_STATS' }
   | { type: 'STATS_RESPONSE'; stats: ExtensionStats }

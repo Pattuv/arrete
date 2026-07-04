@@ -9,12 +9,12 @@ interface Props {
 
 const VERDICT_CONFIG = {
   green: {
-    bg: '#f0fdf4',
-    border: '#16a34a',
-    iconFill: '#16a34a',
+    bg: '#e8f3e6',
+    border: '#178800',
+    iconFill: '#178800',
     icon: (
       <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
-        <circle cx="14" cy="14" r="14" fill="#16a34a" />
+        <circle cx="14" cy="14" r="14" fill="#178800" />
         <path d="M8 14.5l4.5 4.5 8-9" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
     ),
@@ -54,7 +54,7 @@ const VERDICT_CONFIG = {
 const REASON_SEVERITY_COLORS = {
   red: '#dc2626',
   yellow: '#d97706',
-  green: '#16a34a',
+  green: '#178800',
 };
 
 const ReasonItem: React.FC<{ reason: ScoreReason }> = ({ reason }) => (

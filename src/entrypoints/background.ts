@@ -6,49 +6,50 @@ import {
   getScoreForDomain,
   hasShownOnboarding,
 } from '../storage/stats';
-import type { Message, ScoredResult } from '../utils/messaging';
+import type { Message } from '../utils/messaging';
 
 export default defineBackground(() => {
-  // Per-tab score cache: tabId → ScoredResult
-  const tabScores = new Map<number, ScoredResult>();
-
   chrome.runtime.onMessage.addListener(
-    (message: Message, sender, sendResponse) => {
+    (message: Message, _sender, sendResponse) => {
       (async () => {
         try {
           switch (message.type) {
             case 'SCORE_REQUEST': {
-              const tabId = sender.tab?.id;
               const { url, urgencySignals } = message;
-
               const hostname = new URL(url).hostname;
+
               const cached = await getScoreForDomain(hostname);
               if (cached) {
-                if (tabId !== undefined) tabScores.set(tabId, cached);
                 sendResponse({ type: 'SCORE_RESPONSE', result: cached } satisfies Message);
                 return;
               }
 
               const result = await runScoring(url, urgencySignals);
-              if (tabId !== undefined) tabScores.set(tabId, result);
               await recordScan(result);
-
               sendResponse({ type: 'SCORE_RESPONSE', result } satisfies Message);
               break;
             }
 
             case 'MANUAL_CHECK': {
+              // Reuse the cached score for this domain if one already exists —
+              // otherwise a manual check on an already-scanned site could produce
+              // a different-looking report than the one shown automatically.
+              const hostname = new URL(message.url).hostname;
+              const cached = await getScoreForDomain(hostname);
+              if (cached) {
+                sendResponse({ type: 'SCORE_RESPONSE', result: cached } satisfies Message);
+                break;
+              }
+
               const result = await runScoring(message.url, []);
-              const tabId = sender.tab?.id;
-              if (tabId !== undefined) tabScores.set(tabId, result);
               await recordScan(result);
               sendResponse({ type: 'SCORE_RESPONSE', result } satisfies Message);
               break;
             }
 
-            case 'GET_CURRENT_SCORE': {
-              const tabId = sender.tab?.id;
-              const result = tabId !== undefined ? (tabScores.get(tabId) ?? null) : null;
+            case 'GET_SCORE_FOR_URL': {
+              const hostname = new URL(message.url).hostname;
+              const result = await getScoreForDomain(hostname);
               sendResponse({ type: 'CURRENT_SCORE_RESPONSE', result } satisfies Message);
               break;
             }
@@ -77,10 +78,6 @@ export default defineBackground(() => {
       return true;
     }
   );
-
-  chrome.tabs.onRemoved.addListener(tabId => {
-    tabScores.delete(tabId);
-  });
 
   // Open the toolbar popup for first-time onboarding. If Chrome blocks
   // programmatic open (no user gesture), the popup shows onboarding the

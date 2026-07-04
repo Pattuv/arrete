@@ -3,6 +3,8 @@ import wordmark from '../../assets/wordmark.png';
 import type { ExtensionStats, ScoredResult, Message } from '../../utils/messaging';
 import { hasShownOnboarding, markOnboardingShown } from '../../storage/stats';
 import { OnboardingCard } from '../../components/OnboardingCard';
+import { SafetyReport } from '../../components/SafetyReport';
+import { FONT_FAMILY, FONT_LETTER_SPACING } from '../../utils/fonts';
 
 type View = 'onboarding' | 'dashboard' | 'report';
 
@@ -59,77 +61,48 @@ const ScannedCounter: React.FC<{ count: number }> = ({ count }) => {
   );
 };
 
-const ReportView: React.FC<{ result: ScoredResult; onBack: () => void }> = ({ result, onBack }) => {
-  const verdictColors: Record<string, string> = {
-    green: '#16a34a',
-    yellow: '#d97706',
-    red: '#dc2626',
-  };
-  const color = verdictColors[result.verdict];
-
-  return (
-    <div style={{ padding: '14px' }}>
-      <button
-        onClick={onBack}
-        style={{
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: '13px',
-          color: '#6b7280',
-          padding: 0,
-          marginBottom: '10px',
-          fontFamily: 'inherit',
-        }}
-      >
-        ← Back
-      </button>
-
-      <div
-        style={{
-          border: `2px solid ${color}`,
-          borderRadius: '8px',
-          padding: '14px',
-          marginBottom: '12px',
-        }}
-      >
-        <p style={{ fontSize: '11px', fontWeight: 700, color, letterSpacing: '0.08em', marginBottom: '4px', textTransform: 'uppercase' }}>
-          {result.verdict === 'green' ? 'Safe' : 'Warning'}
-        </p>
-        <p style={{ fontSize: '15px', fontWeight: 700, color: '#111', marginBottom: '6px' }}>
-          {result.verdict === 'green'
-            ? 'You may shop freely.'
-            : result.verdict === 'yellow'
-            ? 'This site is suspicious.'
-            : 'This site could be a scam.'}
-        </p>
-        <p style={{ fontSize: '11px', color: '#6b7280', wordBreak: 'break-all' }}>{result.url}</p>
-      </div>
-
-      <p style={{ fontSize: '11px', fontWeight: 600, color: '#9ca3af', letterSpacing: '0.07em', textTransform: 'uppercase', marginBottom: '8px' }}>
-        Here's why we think so:
-      </p>
-
-      {result.reasons.map((r, i) => (
-        <div key={i} style={{ display: 'flex', gap: '8px', paddingBottom: '10px', borderBottom: '1px solid #f3f4f6', marginBottom: '10px' }}>
-          <div
-            style={{
-              width: '7px',
-              height: '7px',
-              borderRadius: '50%',
-              background: r.severity === 'red' ? '#dc2626' : r.severity === 'yellow' ? '#d97706' : '#16a34a',
-              flexShrink: 0,
-              marginTop: '4px',
-            }}
-          />
-          <div>
-            <p style={{ fontSize: '13px', fontWeight: 600, color: '#111', marginBottom: '2px' }}>{r.label}</p>
-            <p style={{ fontSize: '12px', color: '#6b7280', lineHeight: 1.4 }}>{r.detail}</p>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
+const VERDICT_BANNER: Record<
+  string,
+  { bg: string; border: string; text: string; label: string; icon: React.ReactNode }
+> = {
+  green: {
+    bg: '#e8f3e6',
+    border: '#97c98c',
+    text: '#178800',
+    label: "This site is safe — view report →",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <circle cx="12" cy="12" r="10" fill="#178800" />
+        <path d="M7.5 12.5l3 3 6-6.5" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+    ),
+  },
+  yellow: {
+    bg: '#fffbeb',
+    border: '#fcd34d',
+    text: '#d97706',
+    label: "This site is suspicious — view report →",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L2 21h20L12 2z" fill="#d97706" />
+        <path d="M12 9v5" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="12" cy="17" r="1.1" fill="white" />
+      </svg>
+    ),
+  },
+  red: {
+    bg: '#fff5f5',
+    border: '#fca5a5',
+    text: '#dc2626',
+    label: "This site could be a scam — view report →",
+    icon: (
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2L2 21h20L12 2z" fill="#dc2626" />
+        <path d="M12 9v5" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+        <circle cx="12" cy="17" r="1.1" fill="white" />
+      </svg>
+    ),
+  },
 };
 
 export const App: React.FC = () => {
@@ -158,12 +131,19 @@ export const App: React.FC = () => {
   async function loadData() {
     try {
       const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (tab?.url) setCurrentUrl(tab.url);
+      const url = tab?.url ?? '';
+      if (url) setCurrentUrl(url);
 
-      const [statsResp, scoreResp] = await Promise.all([
+      const requests: Promise<Message>[] = [
         chrome.runtime.sendMessage({ type: 'GET_STATS' } satisfies Message) as Promise<Message>,
-        chrome.runtime.sendMessage({ type: 'GET_CURRENT_SCORE' } satisfies Message) as Promise<Message>,
-      ]);
+      ];
+      if (url) {
+        requests.push(
+          chrome.runtime.sendMessage({ type: 'GET_SCORE_FOR_URL', url } satisfies Message) as Promise<Message>
+        );
+      }
+
+      const [statsResp, scoreResp] = await Promise.all(requests);
 
       if (statsResp?.type === 'STATS_RESPONSE') setStats(statsResp.stats);
       if (scoreResp?.type === 'CURRENT_SCORE_RESPONSE') setCurrentScore(scoreResp.result);
@@ -172,7 +152,14 @@ export const App: React.FC = () => {
     }
   }
 
-  async function handleManualCheck() {
+  // Opens the safety report for the current site — reusing the cached score
+  // if this domain was already scanned (automatically or manually) so the
+  // report is always consistent, never a freshly-recomputed "random" result.
+  async function handleCheckOrViewReport() {
+    if (currentScore) {
+      setView('report');
+      return;
+    }
     if (manualChecking || !currentUrl) return;
     setManualChecking(true);
     try {
@@ -195,8 +182,6 @@ export const App: React.FC = () => {
     }
   }
 
-  const hasRiskyScore = currentScore && currentScore.verdict !== 'green';
-
   if (!ready) return null;
 
   if (view === 'onboarding') {
@@ -213,45 +198,64 @@ export const App: React.FC = () => {
         width: '420px',
         boxSizing: 'border-box',
         background: '#ffffff',
+        position: 'relative',
       }}
     >
-      {view === 'report' && currentScore ? (
-        <ReportView result={currentScore} onBack={() => setView('dashboard')} />
-      ) : (
-        <>
-          {/* Header */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              padding: '16px 20px',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <img src={wordmark} alt="Arrête" style={{ height: '22px', display: 'block' }} />
-            </div>
-            <button
-              onClick={() => window.close()}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '24px', lineHeight: 1 }}
-            >
-              ×
-            </button>
-          </div>
+      {/* The dashboard always stays mounted underneath — the report is a
+          floating overlay on top of it, exactly like it appears on the page
+          when a toast is expanded, not a separate in-flow "view". */}
+      {view === 'report' && currentScore && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '20px',
+            right: '20px',
+            zIndex: 2147483647,
+            fontFamily: FONT_FAMILY,
+            letterSpacing: FONT_LETTER_SPACING,
+          }}
+        >
+          <SafetyReport
+            result={currentScore}
+            onClose={() => setView('dashboard')}
+          />
+        </div>
+      )}
 
-          <div style={{ padding: '18px 20px' }}>
-            {/* Safety report banner (shown when current site has a risky score) */}
-            {hasRiskyScore && (
+      {/* Header */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '16px 20px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <img src={wordmark} alt="Arrête" style={{ height: '22px', display: 'block' }} />
+        </div>
+        <button
+          onClick={() => window.close()}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '24px', lineHeight: 1 }}
+        >
+          ×
+        </button>
+      </div>
+
+      <div style={{ padding: '18px 20px' }}>
+            {/* Safety report indicator — shown whenever the current site has
+                already been scanned (auto or manual), colored to its verdict */}
+            {currentScore && (
               <button
-                onClick={() => setView('report')}
+                onClick={handleCheckOrViewReport}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
                   width: '100%',
                   padding: '10px 12px',
-                  background: '#fff5f5',
-                  border: '1px solid #fca5a5',
+                  background: VERDICT_BANNER[currentScore.verdict].bg,
+                  border: `1px solid ${VERDICT_BANNER[currentScore.verdict].border}`,
                   borderRadius: '8px',
                   cursor: 'pointer',
                   marginBottom: '16px',
@@ -259,13 +263,9 @@ export const App: React.FC = () => {
                   textAlign: 'left',
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                  <path d="M12 2L2 21h20L12 2z" fill="#dc2626" />
-                  <path d="M12 9v5" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                  <circle cx="12" cy="17" r="1.1" fill="white" />
-                </svg>
-                <span style={{ fontSize: '13px', color: '#dc2626', fontWeight: 600 }}>
-                  View this site's safety report →
+                {VERDICT_BANNER[currentScore.verdict].icon}
+                <span style={{ fontSize: '13px', color: VERDICT_BANNER[currentScore.verdict].text, fontWeight: 600 }}>
+                  {VERDICT_BANNER[currentScore.verdict].label}
                 </span>
               </button>
             )}
@@ -293,10 +293,10 @@ export const App: React.FC = () => {
             {/* Scan counter */}
             <ScannedCounter count={stats?.totalScanned ?? 0} />
 
-            {/* Manual check button (shown when no auto-detected score) */}
+            {/* Manual check button (shown when the current site hasn't been scanned yet) */}
             {!currentScore && (
               <button
-                onClick={handleManualCheck}
+                onClick={handleCheckOrViewReport}
                 disabled={manualChecking}
                 style={{
                   display: 'flex',
@@ -337,14 +337,12 @@ export const App: React.FC = () => {
             )}
 
             {/* Current URL footer */}
-            {currentUrl && (
-              <p style={{ fontSize: '11px', color: '#9ca3af', textAlign: 'center', wordBreak: 'break-all' }}>
-                Currently visiting {truncateUrl(currentUrl)}
-              </p>
-            )}
-          </div>
-        </>
-      )}
+        {currentUrl && (
+          <p style={{ fontSize: '11px', color: '#9ca3af', textAlign: 'center', wordBreak: 'break-all' }}>
+            Currently visiting {truncateUrl(currentUrl)}
+          </p>
+        )}
+      </div>
 
       <style>{`
         @keyframes spin {

@@ -45,9 +45,9 @@ function createBadge(): HTMLElement {
     gap: 3px;
     font-size: 10px;
     font-weight: 600;
-    color: #16a34a;
-    background: #dcfce7;
-    border: 1px solid #86efac;
+    color: #178800;
+    background: #d5ead1;
+    border: 1px solid #97c98c;
     border-radius: 4px;
     padding: 1px 5px;
     margin-left: 4px;
@@ -57,7 +57,7 @@ function createBadge(): HTMLElement {
     letter-spacing: -0.05em;
     line-height: 1.6;
   `;
-  badge.innerHTML = `<svg width="9" height="9" viewBox="0 0 9 9" fill="none" style="flex-shrink:0"><circle cx="4.5" cy="4.5" r="4.5" fill="#16a34a"/><path d="M2.5 4.5l1.5 1.5 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Verified Retailer`;
+  badge.innerHTML = `<svg width="9" height="9" viewBox="0 0 9 9" fill="none" style="flex-shrink:0"><circle cx="4.5" cy="4.5" r="4.5" fill="#178800"/><path d="M2.5 4.5l1.5 1.5 3-3" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg> Verified Retailer`;
   return badge;
 }
 
