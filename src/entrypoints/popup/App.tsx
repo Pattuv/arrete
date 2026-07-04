@@ -4,7 +4,6 @@ import type { ExtensionStats, ScoredResult, Message } from '../../utils/messagin
 import { hasShownOnboarding, markOnboardingShown } from '../../storage/stats';
 import { OnboardingCard } from '../../components/OnboardingCard';
 import { SafetyReport } from '../../components/SafetyReport';
-import { FONT_FAMILY, FONT_LETTER_SPACING } from '../../utils/fonts';
 
 type View = 'onboarding' | 'dashboard' | 'report';
 
@@ -192,36 +191,26 @@ export const App: React.FC = () => {
     );
   }
 
+  // Rendered in normal document flow (not position: fixed) so the popup's
+  // own auto-sizing correctly grows to fit the taller report card — a fixed
+  // overlay doesn't count toward the popup's measured content size and would
+  // just get clipped to the dashboard's dimensions.
+  if (view === 'report' && currentScore) {
+    return (
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '16px', background: '#ffffff' }}>
+        <SafetyReport result={currentScore} onClose={() => setView('dashboard')} />
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
         width: '420px',
         boxSizing: 'border-box',
         background: '#ffffff',
-        position: 'relative',
       }}
     >
-      {/* The dashboard always stays mounted underneath — the report is a
-          floating overlay on top of it, exactly like it appears on the page
-          when a toast is expanded, not a separate in-flow "view". */}
-      {view === 'report' && currentScore && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '20px',
-            right: '20px',
-            zIndex: 2147483647,
-            fontFamily: FONT_FAMILY,
-            letterSpacing: FONT_LETTER_SPACING,
-          }}
-        >
-          <SafetyReport
-            result={currentScore}
-            onClose={() => setView('dashboard')}
-          />
-        </div>
-      )}
-
       {/* Header */}
       <div
         style={{
