@@ -9,7 +9,7 @@ export default defineConfig({
   }),
   manifest: {
     name: 'Arrête',
-    description: 'Protect yourself from shopping scams and suspicious sites',
+    description: 'Stop before you spend. Arrête detects scam sites before they cost you.',
     permissions: ['storage', 'activeTab'],
     host_permissions: ['<all_urls>'],
     icons: {
@@ -17,6 +17,12 @@ export default defineConfig({
       48: 'icons/icon48.png',
       128: 'icons/icon128.png',
     },
+    web_accessible_resources: [
+      {
+        resources: ['pindemo.mov'],
+        matches: ['<all_urls>'],
+      },
+    ],
     action: {
       default_popup: 'popup.html',
       default_icon: {

@@ -13,7 +13,6 @@ export const ContentApp: React.FC = () => {
   const [guardDismissed, setGuardDismissed] = useState(false);
 
   useEffect(() => {
-    // Inject DM Sans into the host document — @font-face definitions pierce shadow DOM
     injectDmSans(document);
   }, []);
 
@@ -32,22 +31,14 @@ export const ContentApp: React.FC = () => {
       }
     };
 
-    // composed: true lets the event pierce shadow DOM boundaries
     document.addEventListener('arrete:event', handler);
     return () => document.removeEventListener('arrete:event', handler);
   }, [guardDismissed]);
 
-  if (mode === 'hidden' || !result) return null;
+  if (mode === 'hidden') return null;
+  if (!result) return null;
 
   return (
-    // This wrapper is the ONLY element rendered inside our shadow host, and it is
-    // sized to fit its content exactly (never full-viewport). It is pinned to the
-    // real browser viewport via `position: fixed`, which — because neither the
-    // shadow host nor any of its ancestors has a transform/filter/perspective set —
-    // resolves against the viewport itself, not any page container. This means it
-    // never drifts on scroll and is never trapped behind a transformed ancestor.
-    // Because the box is only as big as the card, it can never intercept clicks
-    // anywhere else on the page.
     <div
       style={{
         position: 'fixed',

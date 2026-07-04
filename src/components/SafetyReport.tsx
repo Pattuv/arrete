@@ -120,9 +120,6 @@ export const SafetyReport: React.FC<Props> = ({ result, onClose }) => {
           <span style={{ fontSize: '13px', fontWeight: 700, letterSpacing: '0.04em', color: '#111' }}>
             Arrête
           </span>
-          <span style={{ fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', color: '#888', textTransform: 'uppercase' }}>
-            | Safety Report
-          </span>
         </div>
         <button
           onClick={onClose}

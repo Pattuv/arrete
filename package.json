@@ -1,7 +1,7 @@
 {
   "name": "arrete",
   "version": "0.1.0",
-  "description": "Protect yourself from shopping scams and suspicious sites",
+  "description": "Stop before you spend. Arrête detects scam sites before they cost you.",
   "type": "module",
   "scripts": {
     "dev": "wxt",

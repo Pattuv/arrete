@@ -50,3 +50,17 @@ export async function getScoreForDomain(domain: string): Promise<ScoredResult | 
   if (Date.now() - recent.timestamp > 30 * 60 * 1000) return null;
   return recent;
 }
+
+const ONBOARDING_KEY = 'arrete_onboarding_shown';
+
+// We check a persisted flag rather than trusting chrome.runtime.onInstalled's
+// `reason` field, because Chrome fires reason "update" (not "install") every
+// time an unpacked extension is reloaded during development.
+export async function hasShownOnboarding(): Promise<boolean> {
+  const result = await chrome.storage.local.get(ONBOARDING_KEY);
+  return !!result[ONBOARDING_KEY];
+}
+
+export async function markOnboardingShown(): Promise<void> {
+  await chrome.storage.local.set({ [ONBOARDING_KEY]: true });
+}

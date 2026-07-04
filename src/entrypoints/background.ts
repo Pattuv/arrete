@@ -1,5 +1,11 @@
 import { runScoring } from '../scoring/engine';
-import { recordScan, getStats, addSavings, getScoreForDomain } from '../storage/stats';
+import {
+  recordScan,
+  getStats,
+  addSavings,
+  getScoreForDomain,
+  hasShownOnboarding,
+} from '../storage/stats';
 import type { Message, ScoredResult } from '../utils/messaging';
 
 export default defineBackground(() => {
@@ -74,5 +80,19 @@ export default defineBackground(() => {
 
   chrome.tabs.onRemoved.addListener(tabId => {
     tabScores.delete(tabId);
+  });
+
+  // Open the toolbar popup for first-time onboarding. If Chrome blocks
+  // programmatic open (no user gesture), the popup shows onboarding the
+  // first time the user clicks the icon instead.
+  chrome.runtime.onInstalled.addListener(() => {
+    (async () => {
+      try {
+        if (await hasShownOnboarding()) return;
+        await chrome.action.openPopup();
+      } catch {
+        // Popup will show onboarding on next icon click
+      }
+    })();
   });
 });

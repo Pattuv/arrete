@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import wordmark from '../../assets/wordmark.png';
 import type { ExtensionStats, ScoredResult, Message } from '../../utils/messaging';
+import { hasShownOnboarding, markOnboardingShown } from '../../storage/stats';
+import { OnboardingCard } from '../../components/OnboardingCard';
 
-type View = 'dashboard' | 'report';
+type View = 'onboarding' | 'dashboard' | 'report';
 
 function formatCurrency(n: number): string {
   return n.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
@@ -136,10 +138,22 @@ export const App: React.FC = () => {
   const [view, setView] = useState<View>('dashboard');
   const [manualChecking, setManualChecking] = useState(false);
   const [currentUrl, setCurrentUrl] = useState('');
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
-    loadData();
+    (async () => {
+      const shown = await hasShownOnboarding();
+      setView(shown ? 'dashboard' : 'onboarding');
+      setReady(true);
+      if (shown) loadData();
+    })();
   }, []);
+
+  async function handleOnboardingComplete() {
+    await markOnboardingShown();
+    setView('dashboard');
+    loadData();
+  }
 
   async function loadData() {
     try {
@@ -183,6 +197,16 @@ export const App: React.FC = () => {
 
   const hasRiskyScore = currentScore && currentScore.verdict !== 'green';
 
+  if (!ready) return null;
+
+  if (view === 'onboarding') {
+    return (
+      <div style={{ width: '420px', boxSizing: 'border-box', background: '#ffffff', border: '1px solid #000' }}>
+        <OnboardingCard onComplete={handleOnboardingComplete} />
+      </div>
+    );
+  }
+
   return (
     <div
       style={{
@@ -206,24 +230,10 @@ export const App: React.FC = () => {
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <img src={wordmark} alt="Arrête" style={{ height: '22px', display: 'block' }} />
-              <span
-                style={{
-                  fontSize: '11px',
-                  fontWeight: 500,
-                  letterSpacing: '0.2em',
-                  color: '#111',
-                  textTransform: 'uppercase',
-                  position: 'relative',
-                  top: '3.5px',
-                }}
-              >
-                | Dashboard
-              </span>
-         
             </div>
             <button
               onClick={() => window.close()}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '18px', lineHeight: 1 }}
+              style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#9ca3af', fontSize: '24px', lineHeight: 1 }}
             >
               ×
             </button>
@@ -295,7 +305,7 @@ export const App: React.FC = () => {
                   gap: '8px',
                   width: '100%',
                   padding: '18px 12px',
-                  background: manualChecking ? '#374151' : '#111827',
+                  background: manualChecking ? '#333' : '#000',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
