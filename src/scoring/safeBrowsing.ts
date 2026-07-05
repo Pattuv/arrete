@@ -1,10 +1,10 @@
 /**
  * Google Safe Browsing Lookup API v4.
- * Requires VITE_SAFE_BROWSING_KEY environment variable.
+ * Requires GOOGLE_KEY in .env (see .env.example).
  * Gracefully returns score 0 if no key is configured.
  */
 
-const API_KEY = import.meta.env.VITE_SAFE_BROWSING_KEY as string | undefined;
+const API_KEY = import.meta.env.GOOGLE_KEY as string | undefined;
 const GSB_URL = 'https://safebrowsing.googleapis.com/v4/threatMatches:find';
 
 interface SafeBrowsingResult {

@@ -42,7 +42,7 @@ For phishing/malware detection, add a [Google Safe Browsing API key](https://dev
 
 ```bash
 cp .env.example .env
-# Edit .env and set VITE_SAFE_BROWSING_KEY=your_key_here
+# Edit .env and set GOOGLE_KEY=your_key_here
 ```
 
 The extension works without it — the other three signals still produce meaningful scores.

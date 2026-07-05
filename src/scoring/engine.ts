@@ -1,4 +1,4 @@
-import type { ScoredResult, ScoreReason, RiskLevel } from '../utils/messaging';
+import type { ScoredResult, SignalBreakdown, SignalStatus, RiskLevel } from '../utils/messaging';
 import { scoreDomainAge } from './domainAge';
 import { scoreTyposquat } from './typosquat';
 import { scoreSafeBrowsing } from './safeBrowsing';
@@ -16,6 +16,15 @@ function verdictFromScore(score: number): RiskLevel {
   if (score >= 65) return 'red';
   if (score >= 35) return 'yellow';
   return 'green';
+}
+
+// Same tiers used for every individual signal's checklist status, so a
+// sub-score of e.g. 40 always reads as "warn" whether it came from domain
+// age, typosquat, or urgency.
+function statusFromScore(score: number): SignalStatus {
+  if (score >= 65) return 'bad';
+  if (score >= 20) return 'warn';
+  return 'good';
 }
 
 export async function runScoring(
@@ -43,78 +52,75 @@ export async function runScoring(
 
   const score = Math.round(Math.min(100, Math.max(0, rawScore)));
   const verdict = verdictFromScore(score);
-  const reasons: ScoreReason[] = [];
 
-  // Build reason list — only include signals that contributed meaningfully
-  if (safeBrowsingResult.score > 0) {
-    reasons.push({
-      label: 'Google Safe Browsing alert',
-      detail: `Flagged as ${safeBrowsingResult.threatType ?? 'a threat'} by Google Safe Browsing`,
-      severity: 'red',
-    });
+  // Domain age
+  let domainAgeDetail: string;
+  if (domainAgeResult.error || domainAgeResult.ageDays === null) {
+    domainAgeDetail = 'Registration date unavailable';
+  } else {
+    const days = domainAgeResult.ageDays;
+    if (days < 1) domainAgeDetail = 'Registered today';
+    else if (days < 30) domainAgeDetail = `Registered ${days} day${days === 1 ? '' : 's'} ago`;
+    else if (days < 365) {
+      const months = Math.max(1, Math.round(days / 30));
+      domainAgeDetail = `Registered ${months} month${months === 1 ? '' : 's'} ago`;
+    } else {
+      const years = Math.round(days / 365);
+      domainAgeDetail = `Registered ${years} year${years === 1 ? '' : 's'} ago`;
+    }
   }
+  const domainAge: SignalBreakdown = {
+    status: statusFromScore(domainAgeResult.score),
+    label: 'Domain age',
+    detail: domainAgeDetail,
+  };
 
-  if (domainAgeResult.score >= 85) {
-    const daysText =
-      domainAgeResult.ageDays !== null
-        ? `${domainAgeResult.ageDays} day${domainAgeResult.ageDays === 1 ? '' : 's'} ago`
-        : 'very recently';
-    reasons.push({
-      label: 'Brand-new domain',
-      detail: `Domain was registered ${daysText} — legitimate retailers are rarely this new`,
-      severity: domainAgeResult.score >= 85 ? 'red' : 'yellow',
-    });
-  } else if (domainAgeResult.score >= 40) {
-    reasons.push({
-      label: 'Recently registered domain',
-      detail: `Domain is only ${domainAgeResult.ageDays} days old`,
-      severity: 'yellow',
-    });
+  // Typosquat / URL similarity
+  let typosquatDetail: string;
+  if (typosquatResult.distance === 0) {
+    typosquatDetail = 'Matches a known retailer';
+  } else if (typosquatResult.closestBrand && typosquatResult.score >= 40) {
+    typosquatDetail = `Similar to ${typosquatResult.closestBrand}.com`;
+  } else {
+    typosquatDetail = 'No resemblance to known brands';
   }
+  const typosquat: SignalBreakdown = {
+    status: statusFromScore(typosquatResult.score),
+    label: 'URL similarity',
+    detail: typosquatDetail,
+  };
 
-  if (typosquatResult.score >= 75 && typosquatResult.closestBrand) {
-    reasons.push({
-      label: 'URL closely resembles a known brand',
-      detail: `"${urlObj.hostname}" looks very similar to "${typosquatResult.closestBrand}.com" but is not`,
-      severity: typosquatResult.score >= 75 ? 'red' : 'yellow',
-    });
-  } else if (typosquatResult.score >= 40 && typosquatResult.closestBrand) {
-    reasons.push({
-      label: 'URL resembles a known brand',
-      detail: `This domain has similarities to "${typosquatResult.closestBrand}.com"`,
-      severity: 'yellow',
-    });
-  }
+  // Google Safe Browsing (binary signal)
+  const safeBrowsing: SignalBreakdown = {
+    status: safeBrowsingResult.score > 0 ? 'bad' : 'good',
+    label: 'Safe Browsing',
+    detail:
+      safeBrowsingResult.score > 0
+        ? `Flagged as ${(safeBrowsingResult.threatType ?? 'a threat').toLowerCase().replace(/_/g, ' ')}`
+        : 'Not flagged by Google',
+  };
 
-  if (urgencyScore >= 65 && urgencySignals.length > 0) {
-    reasons.push({
-      label: 'Manufactured urgency language',
-      detail: `Found ${urgencySignals.length} pressure tactics: "${urgencySignals.slice(0, 2).join('", "')}"`,
-      severity: urgencyScore >= 65 ? 'red' : 'yellow',
-    });
-  } else if (urgencyScore >= 20 && urgencySignals.length > 0) {
-    reasons.push({
-      label: 'Urgency language detected',
-      detail: `"${urgencySignals[0]}"`,
-      severity: 'yellow',
-    });
+  // Urgency language
+  let urgencyDetail: string;
+  if (urgencySignals.length === 0) {
+    urgencyDetail = 'None detected';
+  } else if (urgencySignals.length === 1) {
+    urgencyDetail = `"${urgencySignals[0]}"`;
+  } else {
+    urgencyDetail = `${urgencySignals.length} pressure tactics found`;
   }
-
-  // If score is low but no specific reasons were found
-  if (score < 35 && reasons.length === 0) {
-    reasons.push({
-      label: 'No major risk signals found',
-      detail: 'Domain age, URL, and content all appear normal',
-      severity: 'green',
-    });
-  }
+  const urgency: SignalBreakdown = {
+    status: statusFromScore(urgencyScore),
+    label: 'Urgency language',
+    detail: urgencyDetail,
+  };
 
   return {
     url,
     domain: hostname,
     score,
     verdict,
-    reasons,
+    signals: { domainAge, typosquat, safeBrowsing, urgency },
     timestamp: Date.now(),
   };
 }

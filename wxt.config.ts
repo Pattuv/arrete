@@ -6,6 +6,7 @@ export default defineConfig({
   modules: ['@wxt-dev/module-react'],
   vite: () => ({
     plugins: [tailwindcss()],
+    envPrefix: ['VITE_', 'GOOGLE_'],
   }),
   manifest: {
     name: 'Arrête',

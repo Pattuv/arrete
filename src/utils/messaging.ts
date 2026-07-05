@@ -1,9 +1,21 @@
 export type RiskLevel = 'green' | 'yellow' | 'red';
 
-export interface ScoreReason {
+// Per-signal verdict shown in the report checklist — independent from the
+// overall RiskLevel since a single signal can be a mild "warn" even when the
+// overall site is safe, or vice versa.
+export type SignalStatus = 'good' | 'warn' | 'bad';
+
+export interface SignalBreakdown {
+  status: SignalStatus;
   label: string;
   detail: string;
-  severity: RiskLevel;
+}
+
+export interface SignalBreakdowns {
+  domainAge: SignalBreakdown;
+  typosquat: SignalBreakdown;
+  safeBrowsing: SignalBreakdown;
+  urgency: SignalBreakdown;
 }
 
 export interface ScoredResult {
@@ -11,7 +23,7 @@ export interface ScoredResult {
   domain: string;
   score: number;
   verdict: RiskLevel;
-  reasons: ScoreReason[];
+  signals: SignalBreakdowns;
   timestamp: number;
 }
 
