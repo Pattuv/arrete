@@ -11,6 +11,7 @@ export const ContentApp: React.FC = () => {
   const [mode, setMode] = useState<OverlayMode>('hidden');
   const [result, setResult] = useState<ScoredResult | null>(null);
   const [guardDismissed, setGuardDismissed] = useState(false);
+  const [proceed, setProceed] = useState<(() => void) | null>(null);
 
   useEffect(() => {
     injectDmSans(document);
@@ -18,16 +19,19 @@ export const ContentApp: React.FC = () => {
 
   useEffect(() => {
     const handler = (e: Event) => {
-      const { type, payload } = (e as CustomEvent<{ type: string; payload: unknown }>).detail;
+      const { type, payload } = (e as CustomEvent<{ type: string; payload: { proceed?: () => void } }>).detail;
 
       if (type === 'ARRETE_SCORE') {
-        const scored = payload as ScoredResult;
+        const scored = payload as unknown as ScoredResult;
         setResult(scored);
         setMode('toast');
       }
 
       if (type === 'ARRETE_CHECKOUT' && !guardDismissed) {
-        setMode(prev => (prev === 'hidden' ? 'guard' : prev === 'toast' ? 'guard' : prev));
+        // Wrap in an arrow so React doesn't treat the function as a state
+        // updater (setState(fn) calls fn immediately as a reducer).
+        setProceed(payload.proceed ? () => payload.proceed! : null);
+        setMode(prev => (prev === 'report' ? prev : 'guard'));
       }
     };
 
@@ -68,8 +72,10 @@ export const ContentApp: React.FC = () => {
           onComplete={() => {
             setGuardDismissed(true);
             setMode('toast');
+            proceed?.();
           }}
           onViewReport={() => setMode('report')}
+          onClose={() => setMode('toast')}
         />
       )}
     </div>

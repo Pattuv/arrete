@@ -2,7 +2,7 @@ import { createShadowRootUi } from 'wxt/utils/content-script-ui/shadow-root';
 import { createRoot } from 'react-dom/client';
 import { createElement } from 'react';
 import { detectShoppingPage } from '../detection/shoppingDetector';
-import { detectCheckoutPage } from '../detection/checkoutDetector';
+import { detectCheckoutPage, findActionButtons } from '../detection/checkoutDetector';
 import { detectUrgencySignals } from '../scoring/urgency';
 import type { Message, ScoredResult } from '../utils/messaging';
 import { ContentApp } from '../components/ContentApp';
@@ -57,42 +57,87 @@ export default defineContentScript({
     const urgencySignals = detectUrgencySignals();
 
     let result: ScoredResult | null = null;
-    try {
-      const response = (await chrome.runtime.sendMessage({
-        type: 'SCORE_REQUEST',
+
+    // The MV3 background service worker can be dormant when a tab first loads.
+    // If the first sendMessage call fails (worker not yet awake), wait briefly
+    // and retry once before giving up.
+    async function sendScoreRequest(): Promise<Message | null> {
+      const req = {
+        type: 'SCORE_REQUEST' as const,
         url: window.location.href,
         urgencySignals,
-      } satisfies Message)) as Message;
-
-      if (response?.type === 'SCORE_RESPONSE') {
-        result = response.result;
-        dispatch('ARRETE_SCORE', result);
-
-        if (result.verdict === 'red') {
-          trackPotentialSavings();
+      } satisfies Message;
+      try {
+        return (await chrome.runtime.sendMessage(req)) as Message;
+      } catch {
+        await new Promise(r => setTimeout(r, 600));
+        try {
+          return (await chrome.runtime.sendMessage(req)) as Message;
+        } catch {
+          return null;
         }
       }
-    } catch {
-      return;
+    }
+
+    const response = await sendScoreRequest();
+    if (response?.type === 'SCORE_RESPONSE') {
+      result = response.result;
+      dispatch('ARRETE_SCORE', result);
+
+      if (result.verdict === 'red') {
+        trackPotentialSavings();
+      }
     }
 
     if (!result) return;
 
-    // Warn (no button disabling) when a checkout/payment form appears
-    let checkoutWarningShown = false;
-    function checkCheckout() {
-      if (checkoutWarningShown) return;
-      if (!result || result.verdict === 'green') return;
+    if (result.verdict === 'green') return;
 
-      if (detectCheckoutPage()) {
-        checkoutWarningShown = true;
-        dispatch('ARRETE_CHECKOUT', {});
-      }
+    // --- Click interception ---
+    // Track which buttons already have an interceptor so we don't double-attach.
+    const intercepted = new WeakSet<HTMLElement>();
+
+    function interceptButton(btn: HTMLElement) {
+      if (intercepted.has(btn)) return;
+      intercepted.add(btn);
+
+      const handler = (e: MouseEvent) => {
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        const proceed = () => {
+          btn.removeEventListener('click', handler, true);
+          // <a> tags: follow href directly since re-clicking a prevented anchor
+          // does not re-trigger navigation even after the listener is removed.
+          if (btn.tagName === 'A') {
+            const href = btn.getAttribute('href');
+            if (href) window.location.href = href;
+          } else {
+            btn.click();
+          }
+        };
+
+        dispatch('ARRETE_CHECKOUT', { proceed });
+      };
+
+      btn.addEventListener('click', handler, true); // capture phase
     }
 
-    checkCheckout();
+    // Attach to all buttons present now.
+    findActionButtons().forEach(interceptButton);
 
-    const observer = new MutationObserver(() => checkCheckout());
+    // Also catch buttons injected after initial load (SPAs, lazy cart widgets).
+    // Keep detectCheckoutPage() as a secondary fallback for pages where the
+    // user reaches a payment form without ever clicking an intercepted button.
+    let checkoutFallbackShown = false;
+    const observer = new MutationObserver(() => {
+      findActionButtons().forEach(interceptButton);
+
+      if (!checkoutFallbackShown && detectCheckoutPage()) {
+        checkoutFallbackShown = true;
+        dispatch('ARRETE_CHECKOUT', { proceed: undefined });
+      }
+    });
     observer.observe(document.body, { childList: true, subtree: true });
     ctx.onInvalidated(() => observer.disconnect());
   },

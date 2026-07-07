@@ -1,16 +1,36 @@
 import React, { useEffect, useState } from 'react';
 import type { ScoredResult } from '../utils/messaging';
 import { FONT_FAMILY, FONT_LETTER_SPACING } from '../utils/fonts';
+import intervention from '../assets/intervention.png';
+import wordmark from '../assets/wordmark.png';
 
 interface Props {
   result: ScoredResult;
   onComplete: () => void;
   onViewReport: () => void;
+  onClose: () => void;
 }
 
 const COUNTDOWN_SECONDS = 10;
 
-export const CheckoutGuard: React.FC<Props> = ({ result, onComplete, onViewReport }) => {
+// intervention.png is a 1003x466 canvas, but the actual card artwork (white
+// card, red 1px border, gray box with icon/"Wait!"/subtext baked in) only
+// occupies the top-left 487x466 — the rest is blank canvas. We render the
+// image at its native, unscaled size and crop the wrapper to 487x466 so
+// nothing is stretched or squeezed, then position the still-missing pieces
+// (wordmark, close button, countdown copy, progress bar, action buttons) on
+// top using the pixel coordinates measured from that same source image.
+const CARD_WIDTH = 487;
+const CARD_HEIGHT = 466;
+const IMAGE_WIDTH = 1003;
+const IMAGE_HEIGHT = 466;
+
+// Gray box interior: x 30–457, y 68–255 in source-image pixels.
+const CONTENT_LEFT = 30;
+const CONTENT_RIGHT = CARD_WIDTH - 458; // 29
+const GRAY_BOX_BOTTOM = 255;
+
+export const CheckoutGuard: React.FC<Props> = ({ result, onComplete, onViewReport, onClose }) => {
   const [secondsLeft, setSecondsLeft] = useState(COUNTDOWN_SECONDS);
   const [done, setDone] = useState(false);
 
@@ -28,122 +48,178 @@ export const CheckoutGuard: React.FC<Props> = ({ result, onComplete, onViewRepor
   return (
     <div
       style={{
-        background: 'white',
-        borderRadius: '10px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
-        border: '2px solid #dc2626',
-        width: '300px',
+        position: 'relative',
+        width: `${CARD_WIDTH}px`,
+        height: `${CARD_HEIGHT}px`,
+        overflow: 'hidden',
         fontFamily: FONT_FAMILY,
         letterSpacing: FONT_LETTER_SPACING,
-        overflow: 'hidden',
+        boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
       }}
     >
-      {/* Header */}
+      <img
+        src={intervention}
+        alt=""
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: `${IMAGE_WIDTH}px`,
+          height: `${IMAGE_HEIGHT}px`,
+          maxWidth: 'none',
+        }}
+      />
+
+      {/* Wordmark — covers the plain "Arrête" text baked into the source
+          image so we can use the real logo (with its accent chevron) instead. */}
       <div
         style={{
-          background: '#dc2626',
-          padding: '10px 14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
+          position: 'absolute',
+          top: '12px',
+          left: '20px',
+          width: '110px',
+          height: '38px',
+          background: 'white',
+        }}
+      />
+      <img
+        src={wordmark}
+        alt="Arrête"
+        style={{ position: 'absolute', top: '21px', left: '28px', height: '22px', width: 'auto' }}
+      />
+
+      {/* Close */}
+      <button
+        onClick={onClose}
+        aria-label="Close"
+        style={{
+          position: 'absolute',
+          top: '12px',
+          right: '14px',
+          background: 'none',
+          border: 'none',
+          cursor: 'pointer',
+          color: '#9ca3af',
+          fontSize: '20px',
+          lineHeight: 1,
+          padding: 0,
         }}
       >
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M12 2L2 21h20L12 2z" fill="white" />
-          <path d="M12 9v5" stroke="#dc2626" strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx="12" cy="17" r="1.1" fill="#dc2626" />
-        </svg>
-        <span style={{ color: 'white', fontSize: '13px', fontWeight: 700, letterSpacing: '0.04em' }}>
-          Arrête — Hold On
-        </span>
-      </div>
+        ×
+      </button>
 
-      {/* Body */}
-      <div style={{ padding: '16px 14px' }}>
-        <p style={{ margin: '0 0 8px', fontSize: '14px', fontWeight: 600, color: '#111', lineHeight: 1.4 }}>
-          This site shows signs of pressure tactics.
-        </p>
-        <p style={{ margin: '0 0 14px', fontSize: '12px', color: '#555', lineHeight: 1.5 }}>
-          Take a moment before entering your payment information. You will be able to continue in {secondsLeft} second{secondsLeft !== 1 ? 's' : ''}.
-        </p>
+      {/* Countdown copy — sits in the blank lower portion of the gray box,
+          right below the "This site shows signs of pressure tactics." line
+          that's already baked into the image. */}
+      <p
+        style={{
+          position: 'absolute',
+          top: '190px',
+          left: `${CONTENT_LEFT}px`,
+          right: `${CONTENT_RIGHT}px`,
+          margin: 0,
+          fontSize: '12px',
+          color: '#6b7280',
+          textAlign: 'center',
+          lineHeight: 1.5,
+        }}
+      >
+        Take a moment before entering your payment information.
+        <br />
+        You will be able to continue in {secondsLeft} second{secondsLeft !== 1 ? 's' : ''}.
+      </p>
 
-        {/* Progress bar */}
+      {/* Progress bar */}
+      <div
+        style={{
+          position: 'absolute',
+          top: `${GRAY_BOX_BOTTOM + 32}px`,
+          left: `${CONTENT_LEFT}px`,
+          right: `${CONTENT_RIGHT}px`,
+          height: '5px',
+          borderRadius: '3px',
+          background: '#eee',
+          overflow: 'hidden',
+        }}
+      >
         <div
           style={{
-            height: '4px',
-            background: '#fee2e2',
-            borderRadius: '2px',
-            overflow: 'hidden',
-            marginBottom: '14px',
+            height: '100%',
+            width: `${progress}%`,
+            background: '#111',
+            borderRadius: '3px',
+            transition: 'width 1s linear',
+          }}
+        />
+      </div>
+
+      {/* Actions */}
+      <button
+        onClick={onViewReport}
+        style={{
+          position: 'absolute',
+          top: `${GRAY_BOX_BOTTOM + 32 + 5 + 20}px`,
+          left: `${CONTENT_LEFT}px`,
+          right: `${CONTENT_RIGHT}px`,
+          height: '46px',
+          background: '#111',
+          color: 'white',
+          border: 'none',
+          borderRadius: '8px',
+          cursor: 'pointer',
+          fontSize: '14px',
+          fontWeight: 400,
+          fontFamily: 'inherit',
+          letterSpacing: 'inherit',
+        }}
+      >
+        View safety report
+      </button>
+
+      {done ? (
+        <button
+          onClick={onComplete}
+          style={{
+            position: 'absolute',
+            top: `${GRAY_BOX_BOTTOM + 32 + 5 + 20 + 46 + 10}px`,
+            left: `${CONTENT_LEFT}px`,
+            right: `${CONTENT_RIGHT}px`,
+            height: '46px',
+            background: 'white',
+            color: '#111',
+            border: '1px solid #111',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontSize: '14px',
+            fontWeight: 400,
+            fontFamily: 'inherit',
+            letterSpacing: 'inherit',
           }}
         >
-          <div
-            style={{
-              height: '100%',
-              width: `${progress}%`,
-              background: '#dc2626',
-              borderRadius: '2px',
-              transition: 'width 1s linear',
-            }}
-          />
+          Continue anyway
+        </button>
+      ) : (
+        <div
+          style={{
+            position: 'absolute',
+            top: `${GRAY_BOX_BOTTOM + 32 + 5 + 20 + 46 + 10}px`,
+            left: `${CONTENT_LEFT}px`,
+            right: `${CONTENT_RIGHT}px`,
+            height: '46px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'white',
+            color: '#bbb',
+            border: '1px solid #e5e5e5',
+            borderRadius: '8px',
+            fontSize: '14px',
+            fontWeight: 400,
+          }}
+        >
+          Continue anyway ({secondsLeft}s)
         </div>
-
-        {/* Actions */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-          <button
-            onClick={onViewReport}
-            style={{
-              width: '100%',
-              padding: '10px',
-              background: '#dc2626',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 600,
-              fontFamily: 'inherit',
-            }}
-          >
-            View Safety Report
-          </button>
-
-          {done ? (
-            <button
-              onClick={onComplete}
-              style={{
-                width: '100%',
-                padding: '10px',
-                background: 'white',
-                color: '#333',
-                border: '1px solid #ddd',
-                borderRadius: '6px',
-                cursor: 'pointer',
-                fontSize: '13px',
-                fontFamily: 'inherit',
-              }}
-            >
-              Continue Anyway
-            </button>
-          ) : (
-            <div
-              style={{
-                width: '100%',
-                padding: '10px',
-                background: '#f5f5f5',
-                color: '#aaa',
-                border: '1px solid #eee',
-                borderRadius: '6px',
-                fontSize: '13px',
-                textAlign: 'center',
-                fontFamily: 'inherit',
-              }}
-            >
-              Continue Anyway ({secondsLeft}s)
-            </div>
-          )}
-        </div>
-      </div>
+      )}
     </div>
   );
 };

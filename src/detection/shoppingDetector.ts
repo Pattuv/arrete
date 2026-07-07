@@ -5,7 +5,7 @@
 
 const PRICE_REGEX = /(\$|€|£|¥)\s*\d[\d,]*(\.\d{2})?/;
 
-const CART_BUTTON_PATTERNS = [
+export const CART_BUTTON_PATTERNS = [
   /add\s+to\s+cart/i,
   /add\s+to\s+bag/i,
   /add\s+to\s+basket/i,

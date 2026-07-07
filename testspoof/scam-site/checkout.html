@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Checkout - Amaz0n.com</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- Keep the shopping-page gate satisfied on this page too, so Arrête's
+     content script (which re-runs detectShoppingPage() on every page load)
+     still activates and the checkout-friction warning has a chance to fire. -->
+<meta property="og:type" content="product">
+<meta property="product:price:amount" content="14.99">
+<meta property="product:price:currency" content="USD">
+
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .checkout-wrap { max-width: 900px; margin: 20px auto; background: white; padding: 24px; border-radius: 8px; }
+  .checkout-wrap h1 { font-size: 20px; }
+  .checkout-grid { display: grid; grid-template-columns: 1fr 320px; gap: 24px; margin-top: 16px; }
+  fieldset { border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+  legend { font-weight: 700; padding: 0 6px; }
+  label { display: block; font-size: 13px; margin: 10px 0 4px; font-weight: 600; }
+  input, select { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .order-summary { border: 1px solid #d5d9d9; border-radius: 8px; padding: 16px; height: fit-content; }
+  .order-summary .line { display: flex; justify-content: space-between; font-size: 14px; margin: 8px 0; }
+  .order-summary .total { font-weight: 700; font-size: 16px; border-top: 1px solid #eee; padding-top: 8px; }
+  .place-order-btn {
+    margin-top: 12px; width: 100%; padding: 12px; border-radius: 20px; border: none;
+    background: linear-gradient(to bottom, #ff5f4d, #ff3b30); color: white; font-weight: 700; font-size: 15px; cursor: pointer;
+  }
+  .reminder-banner {
+    background: #fff3cd; border: 1px solid #ffe69c; color: #664d03; padding: 10px 14px;
+    border-radius: 6px; font-weight: 700; margin-bottom: 16px; text-align: center;
+  }
+  input:invalid:not(:placeholder-shown),
+  input.field-error {
+    border-color: #cc0c39;
+    outline-color: #cc0c39;
+  }
+  .validation-msg {
+    display: none;
+    background: #fdecea;
+    border: 1px solid #cc0c39;
+    color: #a94442;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-size: 13px;
+    margin-bottom: 16px;
+  }
+  .validation-msg.visible { display: block; }
+</style>
+</head>
+<body>
+
+  <div class="topnav">
+    <div class="logo">amaz<span>0</span>n<span style="font-size:10px;">.com</span></div>
+    <div class="deliver-to">
+      <div class="line1">Delivering to 30041</div>
+      <div class="line2">Secure Checkout</div>
+    </div>
+  </div>
+
+  <div class="checkout-wrap">
+    <div class="reminder-banner">
+      &#9203; Complete your order in the next <span class="countdown-timer" id="checkout-timer">04:59</span> or lose this discount! Offer expires soon &mdash; hurry, act now!
+    </div>
+
+    <h1>Checkout</h1>
+
+    <p id="validation-msg" class="validation-msg" role="alert">
+      Please fill in all required fields before placing your order.
+    </p>
+
+    <form id="checkout-form" class="checkout-grid" novalidate>
+      <div>
+        <fieldset>
+          <legend>Shipping Address</legend>
+          <label for="full-name">Full name</label>
+          <input id="full-name" name="full-name" type="text" placeholder="Jane Doe" autocomplete="name" required>
+
+          <label for="address">Billing Address</label>
+          <input id="address" name="address" type="text" placeholder="Street address" autocomplete="street-address" required>
+
+          <div class="row-3">
+            <div>
+              <label for="city">City</label>
+              <input id="city" name="city" type="text" autocomplete="address-level2" required>
+            </div>
+            <div>
+              <label for="state">State</label>
+              <input id="state" name="state" type="text" autocomplete="address-level1" required>
+            </div>
+            <div>
+              <label for="zip">ZIP</label>
+              <input id="zip" name="zip" type="text" autocomplete="postal-code" required>
+            </div>
+          </div>
+
+          <label for="phone">Phone (for delivery updates)</label>
+          <input id="phone" name="phone" type="tel" autocomplete="tel" required>
+        </fieldset>
+
+        <fieldset>
+          <legend>Payment Details</legend>
+          <p style="font-size:13px;color:#565959;">Enter your credit card or debit card information below.</p>
+
+          <label for="cc-number">Card Number</label>
+          <input id="cc-number" name="cc-number" type="text" placeholder="1234 5678 9012 3456" autocomplete="cc-number" required minlength="12">
+
+          <div class="row-2">
+            <div>
+              <label for="cc-exp">Expiration Date</label>
+              <input id="cc-exp" name="cc-exp" type="text" placeholder="MM / YY" autocomplete="cc-exp" required>
+            </div>
+            <div>
+              <label for="cc-csc">CVV / Security Code</label>
+              <input id="cc-csc" name="cc-csc" type="text" placeholder="123" autocomplete="cc-csc" required minlength="3" maxlength="4">
+            </div>
+          </div>
+
+          <label for="cc-name">Name on Card</label>
+          <input id="cc-name" name="cc-name" type="text" autocomplete="cc-name" required>
+        </fieldset>
+      </div>
+
+      <div class="order-summary">
+        <h2 style="font-size:16px;">Order Summary</h2>
+        <div class="line"><span>XBOX Wireless Controller (Robot White)</span><span>$14.99</span></div>
+        <div class="line"><span>Shipping</span><span>$0.00</span></div>
+        <div class="line"><span>Tax</span><span>$0.90</span></div>
+        <div class="line total"><span>Order Total</span><span>$15.89</span></div>
+        <button class="place-order-btn" type="submit">Place Order &mdash; Only 2 left in stock!</button>
+        <p style="font-size:11px;color:#a94442;margin-top:10px;">
+          No refunds after order is placed. Card charges may appear under a different merchant name.
+        </p>
+      </div>
+    </form>
+  </div>
+
+  <div class="test-harness-tag">TESTSPOOF · arrete QA fixture · do not enter real card data</div>
+
+  <script>
+    // Cosmetic countdown only.
+    (function () {
+      let total = 4 * 60 + 59;
+      const el = document.getElementById('checkout-timer');
+      setInterval(function () {
+        if (total <= 0) return;
+        total -= 1;
+        const m = String(Math.floor(total / 60)).padStart(2, '0');
+        const s = String(total % 60).padStart(2, '0');
+        el.textContent = m + ':' + s;
+      }, 1000);
+    })();
+
+    // Validate all fields, then redirect to the punchline page — no data leaves the browser.
+    (function () {
+      const form = document.getElementById('checkout-form');
+      const msg = document.getElementById('validation-msg');
+      const required = form.querySelectorAll('[required]');
+
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        let firstInvalid = null;
+        required.forEach(function (input) {
+          input.classList.remove('field-error');
+          if (!input.value.trim()) {
+            input.classList.add('field-error');
+            if (!firstInvalid) firstInvalid = input;
+          }
+        });
+
+        if (firstInvalid) {
+          msg.classList.add('visible');
+          firstInvalid.focus();
+          return;
+        }
+
+        msg.classList.remove('visible');
+        window.location.href = 'scammed.html';
+      });
+
+      required.forEach(function (input) {
+        input.addEventListener('input', function () {
+          if (input.value.trim()) input.classList.remove('field-error');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

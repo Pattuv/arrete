@@ -16,9 +16,9 @@ export default defineBackground(() => {
           switch (message.type) {
             case 'SCORE_REQUEST': {
               const { url, urgencySignals } = message;
-              const hostname = new URL(url).hostname;
+              const host = new URL(url).host;
 
-              const cached = await getScoreForDomain(hostname);
+              const cached = await getScoreForDomain(host);
               if (cached) {
                 sendResponse({ type: 'SCORE_RESPONSE', result: cached } satisfies Message);
                 return;
@@ -34,8 +34,8 @@ export default defineBackground(() => {
               // Reuse the cached score for this domain if one already exists —
               // otherwise a manual check on an already-scanned site could produce
               // a different-looking report than the one shown automatically.
-              const hostname = new URL(message.url).hostname;
-              const cached = await getScoreForDomain(hostname);
+              const host = new URL(message.url).host;
+              const cached = await getScoreForDomain(host);
               if (cached) {
                 sendResponse({ type: 'SCORE_RESPONSE', result: cached } satisfies Message);
                 break;
@@ -48,8 +48,8 @@ export default defineBackground(() => {
             }
 
             case 'GET_SCORE_FOR_URL': {
-              const hostname = new URL(message.url).hostname;
-              const result = await getScoreForDomain(hostname);
+              const host = new URL(message.url).host;
+              const result = await getScoreForDomain(host);
               sendResponse({ type: 'CURRENT_SCORE_RESPONSE', result } satisfies Message);
               break;
             }

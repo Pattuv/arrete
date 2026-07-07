@@ -48,14 +48,14 @@ export async function scoreDomainAge(hostname: string): Promise<DomainAgeResult>
     );
 
     if (!response.ok) {
-      return { score: 0, ageDays: null, registrationDate: null, error: 'RDAP lookup failed' };
+      return { score: 100, ageDays: null, registrationDate: null, error: 'RDAP lookup failed' };
     }
 
     const data = (await response.json()) as Record<string, unknown>;
     const regDate = extractRegistrationDate(data);
 
     if (!regDate) {
-      return { score: 0, ageDays: null, registrationDate: null, error: 'No registration date' };
+      return { score: 100, ageDays: null, registrationDate: null, error: 'No registration date' };
     }
 
     const ageDays = ageToDays(regDate);
@@ -66,7 +66,7 @@ export async function scoreDomainAge(hostname: string): Promise<DomainAgeResult>
     };
   } catch (err) {
     return {
-      score: 0,
+      score: 100,
       ageDays: null,
       registrationDate: null,
       error: err instanceof Error ? err.message : 'Unknown error',

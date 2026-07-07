@@ -2,6 +2,7 @@
  * Detects whether the current page contains a payment / credit-card entry form.
  * Used to trigger checkout friction on risky sites.
  */
+import { CART_BUTTON_PATTERNS } from './shoppingDetector';
 
 const CHECKOUT_TEXT_PATTERNS = [
   /card\s+number/i,
@@ -47,27 +48,50 @@ export function detectCheckoutPage(): boolean {
   return hasPaymentInputs() || hasCheckoutLabels();
 }
 
+const CHECKOUT_BUTTON_PATTERNS = [
+  /place\s+order/i,
+  /complete\s+(purchase|order)/i,
+  /pay\s+now/i,
+  /confirm\s+(order|payment)/i,
+  /checkout/i,
+  /submit\s+order/i,
+];
+
+const ALL_ACTION_PATTERNS = [...CART_BUTTON_PATTERNS, ...CHECKOUT_BUTTON_PATTERNS];
+
 /**
  * Find the primary checkout / place-order button on the page.
  * Returns null if none found.
  */
 export function findCheckoutButton(): HTMLElement | null {
-  const patterns = [
-    /place\s+order/i,
-    /complete\s+(purchase|order)/i,
-    /pay\s+now/i,
-    /confirm\s+(order|payment)/i,
-    /checkout/i,
-    /submit\s+order/i,
-  ];
-
   const buttons = document.querySelectorAll<HTMLElement>(
     'button[type="submit"], button, input[type="submit"]'
   );
 
   for (const btn of buttons) {
     const text = btn.innerText ?? btn.getAttribute('value') ?? '';
-    if (patterns.some(re => re.test(text))) return btn;
+    if (CHECKOUT_BUTTON_PATTERNS.some(re => re.test(text))) return btn;
   }
   return null;
+}
+
+/**
+ * Find all cart and checkout action buttons on the page — both "Add to Cart" /
+ * "Buy Now" style buttons on product pages and "Place Order" / "Pay Now" style
+ * buttons on checkout pages. Used to attach click interceptors.
+ */
+export function findActionButtons(): HTMLElement[] {
+  const candidates = document.querySelectorAll<HTMLElement>(
+    'button, a, input[type="submit"]'
+  );
+  const matched: HTMLElement[] = [];
+  for (const el of candidates) {
+    const text = (el.tagName === 'INPUT'
+      ? el.getAttribute('value')
+      : el.innerText) ?? '';
+    if (ALL_ACTION_PATTERNS.some(re => re.test(text))) {
+      matched.push(el);
+    }
+  }
+  return matched;
 }

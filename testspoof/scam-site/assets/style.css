@@ -1,0 +1,262 @@
+/* Amaz0n "clone" styling — deliberately close to the real Amazon look & feel
+   so Arrête's shopping-page detector treats it exactly like a real listing. */
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: "Amazon Ember", Arial, sans-serif;
+  color: #0f1111;
+  background: #eaeded;
+}
+
+a { text-decoration: none; color: inherit; }
+
+/* ---------- Top nav ---------- */
+.topnav {
+  background: #131921;
+  color: white;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 800;
+  color: #ff9900;
+  letter-spacing: -0.5px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.logo span { color: #ffffff; }
+
+.deliver-to { line-height: 1.1; padding: 6px 8px; }
+.deliver-to .line1 { color: #ccc; font-size: 11px; }
+.deliver-to .line2 { font-weight: 700; }
+
+.search-bar {
+  flex: 1;
+  display: flex;
+  height: 36px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.search-bar select { background: #f3f3f3; border: none; padding: 0 8px; font-size: 12px; }
+.search-bar input {
+  flex: 1;
+  border: none;
+  padding: 0 10px;
+  font-size: 14px;
+}
+.search-bar button {
+  width: 44px;
+  background: #ff9900;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.nav-account, .nav-orders, .nav-cart {
+  padding: 6px 8px;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+.nav-account .line1, .nav-orders .line1 { color: #ccc; font-size: 11px; }
+.nav-account .line2, .nav-orders .line2 { font-weight: 700; font-size: 13px; }
+.nav-cart { display: flex; align-items: flex-end; gap: 4px; font-weight: 700; }
+.cart-count {
+  background: #ff9900;
+  color: #131921;
+  border-radius: 50%;
+  width: 18px; height: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800;
+  margin-right: 4px;
+}
+
+.subnav {
+  background: #232f3e;
+  color: white;
+  padding: 6px 16px;
+  font-size: 13px;
+  display: flex;
+  gap: 14px;
+}
+.subnav a:hover { text-decoration: underline; }
+
+/* ---------- Urgency banner ---------- */
+.urgency-banner {
+  background: linear-gradient(90deg, #d5001c, #ff3b30);
+  color: white;
+  text-align: center;
+  padding: 10px;
+  font-weight: 800;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  animation: pulse 1.4s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.75; }
+}
+
+.countdown-timer {
+  display: inline-block;
+  background: #111;
+  color: #ffd400;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+  padding: 2px 10px;
+  border-radius: 4px;
+  margin-left: 8px;
+}
+
+/* ---------- Breadcrumb ---------- */
+.breadcrumb {
+  padding: 10px 20px 0;
+  font-size: 12px;
+  color: #565959;
+}
+.breadcrumb a { color: #007185; }
+
+/* ---------- Product layout ---------- */
+.product-wrap {
+  display: grid;
+  grid-template-columns: 90px 1fr 340px;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 16px 20px 40px;
+  background: white;
+}
+
+.main-col { min-width: 0; }
+
+.thumbs { display: flex; flex-direction: column; gap: 8px; }
+.thumbs .thumb {
+  width: 56px; height: 56px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  background: #fafafa;
+}
+.thumbs .thumb.active { border-color: #e77600; box-shadow: 0 0 0 2px #e7760055; }
+
+.main-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+}
+.main-image svg { width: 300px; height: 300px; }
+
+.info h1 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0 0 6px;
+  line-height: 1.3;
+}
+.brand-link { color: #007185; font-size: 14px; }
+.rating-row { display: flex; align-items: center; gap: 8px; margin: 8px 0; font-size: 14px; }
+.stars { color: #e77600; letter-spacing: 1px; }
+.rating-row a { color: #007185; }
+.bought { color: #565959; font-size: 13px; margin: 4px 0 12px; }
+
+.badge-scam {
+  display: inline-block;
+  background: #111;
+  color: #ffd400;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+}
+
+.divider { border: none; border-top: 1px solid #e7e7e7; margin: 12px 0; }
+
+.price-row { display: flex; align-items: baseline; gap: 10px; margin: 8px 0; }
+.price-off { color: #cc0c39; font-size: 20px; font-weight: 700; }
+.price-now { font-size: 28px; font-weight: 700; }
+.price-now .sym { font-size: 16px; position: relative; top: -10px; }
+.price-list { color: #565959; font-size: 13px; text-decoration: line-through; }
+
+.social-proof { color: #cc0c39; font-weight: 700; font-size: 13px; margin: 6px 0; }
+.stock-note { color: #cc0c39; font-weight: 700; font-size: 13px; margin: 6px 0; }
+
+.about-item { margin-top: 20px; }
+.about-item h2 { font-size: 17px; }
+.about-item ul { padding-left: 20px; font-size: 14px; line-height: 1.6; }
+
+/* ---------- Buy box ---------- */
+.buybox {
+  border: 1px solid #d5d9d9;
+  border-radius: 8px;
+  padding: 16px;
+  height: fit-content;
+}
+.buybox .price-now { font-size: 26px; }
+.buybox .prime-badge { color: #007185; font-size: 12px; margin: 6px 0; }
+.buybox .delivery { font-size: 13px; margin: 10px 0; }
+.buybox .delivery b { color: #007600; }
+.buybox .stock { color: #007600; font-weight: 700; margin: 10px 0 4px; font-size: 14px; }
+
+.qty-row { margin: 10px 0; font-size: 13px; }
+.qty-row select { padding: 4px 8px; border-radius: 8px; border: 1px solid #ccc; margin-left: 6px; }
+
+.btn {
+  display: block;
+  width: 100%;
+  border-radius: 20px;
+  border: 1px solid #a88734;
+  padding: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  cursor: pointer;
+  text-align: center;
+}
+.btn-cart { background: linear-gradient(to bottom, #ffd814, #f7ca00); }
+.btn-buy { background: linear-gradient(to bottom, #ff5f4d, #ff3b30); color: white; border-color: #cc0c39; }
+
+.trust-note { font-size: 12px; color: #565959; margin-top: 12px; line-height: 1.6; }
+.trust-note.scam-warning { color: #a94442; background: #fdecea; border: 1px dashed #cc0c39; padding: 8px; border-radius: 6px; }
+
+.exclusive-badge {
+  background: #fff3cd;
+  border: 1px solid #ffe69c;
+  color: #664d03;
+  font-size: 12px;
+  padding: 8px;
+  border-radius: 6px;
+  margin: 10px 0;
+}
+
+footer {
+  background: #232f3e;
+  color: #ddd;
+  text-align: center;
+  padding: 24px;
+  font-size: 12px;
+  margin-top: 20px;
+}
+footer .foot-links { margin-bottom: 8px; }
+footer .foot-links a { margin: 0 10px; color: #ddd; }
+
+.test-harness-tag {
+  position: fixed;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(17,17,17,0.85);
+  color: #fff;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  z-index: 9999;
+  font-family: monospace;
+}

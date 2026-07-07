@@ -33,6 +33,9 @@ export async function runScoring(
 ): Promise<ScoredResult> {
   const urlObj = new URL(url);
   const hostname = urlObj.hostname;
+  // Use host (hostname + port) as the identity key so that e.g.
+  // localhost:5921 and localhost:5922 don't collide in the cache.
+  const host = urlObj.host;
 
   // Run all scorers concurrently
   const [domainAgeResult, typosquatResult, safeBrowsingResult] = await Promise.all([
@@ -117,7 +120,7 @@ export async function runScoring(
 
   return {
     url,
-    domain: hostname,
+    domain: host,
     score,
     verdict,
     signals: { domainAge, typosquat, safeBrowsing, urgency },
