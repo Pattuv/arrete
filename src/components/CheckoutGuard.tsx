@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import type { ScoredResult } from '../utils/messaging';
 import { FONT_FAMILY, FONT_LETTER_SPACING } from '../utils/fonts';
 import intervention from '../assets/intervention.png';
-import wordmark from '../assets/wordmark.png';
 
 interface Props {
   result: ScoredResult;
@@ -18,7 +17,7 @@ const COUNTDOWN_SECONDS = 10;
 // occupies the top-left 487x466 — the rest is blank canvas. We render the
 // image at its native, unscaled size and crop the wrapper to 487x466 so
 // nothing is stretched or squeezed, then position the still-missing pieces
-// (wordmark, close button, countdown copy, progress bar, action buttons) on
+// (close button, countdown copy, progress bar, action buttons) on
 // top using the pixel coordinates measured from that same source image.
 const CARD_WIDTH = 487;
 const CARD_HEIGHT = 466;
@@ -68,24 +67,6 @@ export const CheckoutGuard: React.FC<Props> = ({ result, onComplete, onViewRepor
           height: `${IMAGE_HEIGHT}px`,
           maxWidth: 'none',
         }}
-      />
-
-      {/* Wordmark — covers the plain "Arrête" text baked into the source
-          image so we can use the real logo (with its accent chevron) instead. */}
-      <div
-        style={{
-          position: 'absolute',
-          top: '12px',
-          left: '20px',
-          width: '110px',
-          height: '38px',
-          background: 'white',
-        }}
-      />
-      <img
-        src={wordmark}
-        alt="Arrête"
-        style={{ position: 'absolute', top: '21px', left: '28px', height: '22px', width: 'auto' }}
       />
 
       {/* Close */}
