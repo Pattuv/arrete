@@ -1,6 +1,6 @@
 # Arrête
 
-**Video Demo:** [Watch here](https://drive.google.com/file/d/1kTD-T9Kf8liByFS7nS19wCiKWNfD2zVY/view)
+**Video Demo:** [Watch here](https://vimeo.com/1208136832?share=copy&fl=sv&fe=ci)
 
 **Stop before you spend.** Arrête is a Chrome extension that scans sites as you shop, verifies results on Google Shopping, and makes you WAIT before making purchases—all to keep you and your money safe on the internet.
 
