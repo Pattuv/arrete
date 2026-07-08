@@ -160,6 +160,8 @@ export const App: React.FC = () => {
       return;
     }
     if (manualChecking || !currentUrl) return;
+    // Only score real web pages — skip chrome://, chrome-extension://, about:, etc.
+    if (!/^https?:\/\//i.test(currentUrl)) return;
     setManualChecking(true);
     try {
       const response = (await chrome.runtime.sendMessage({
@@ -282,48 +284,53 @@ export const App: React.FC = () => {
             {/* Scan counter */}
             <ScannedCounter count={stats?.totalScanned ?? 0} />
 
-            {/* Manual check button (shown when the current site hasn't been scanned yet) */}
-            {!currentScore && (
-              <button
-                onClick={handleCheckOrViewReport}
-                disabled={manualChecking}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  width: '100%',
-                  padding: '18px 12px',
-                  background: manualChecking ? '#333' : '#000',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: manualChecking ? 'not-allowed' : 'pointer',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  fontFamily: 'inherit',
-                  marginBottom: '10px',
-                }}
-              >
-                {manualChecking ? (
-                  <>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 1s linear infinite' }}>
-                      <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
-                      <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                    </svg>
-                    Checking…
-                  </>
-                ) : (
-                  <>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
-                      <circle cx="11" cy="11" r="7" stroke="white" strokeWidth="2.5" />
-                      <path d="M20 20l-3.5-3.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
-                    </svg>
-                    Check this website's safety
-                  </>
-                )}
-              </button>
-            )}
+            {/* Manual check button */}
+            {!currentScore && (() => {
+              const isWebPage = /^https?:\/\//i.test(currentUrl);
+              return (
+                <button
+                  onClick={handleCheckOrViewReport}
+                  disabled={!isWebPage || manualChecking}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    padding: '18px 12px',
+                    background: (!isWebPage || manualChecking) ? '#333' : '#000',
+                    color: !isWebPage ? '#9ca3af' : 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: (!isWebPage || manualChecking) ? 'not-allowed' : 'pointer',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    fontFamily: 'inherit',
+                    marginBottom: '10px',
+                  }}
+                >
+                  {!isWebPage ? (
+                    'Start shopping to scan websites'
+                  ) : manualChecking ? (
+                    <>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" style={{ animation: 'spin 1s linear infinite' }}>
+                        <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.3)" strokeWidth="3" />
+                        <path d="M12 2a10 10 0 0 1 10 10" stroke="white" strokeWidth="3" strokeLinecap="round" />
+                      </svg>
+                      Checking…
+                    </>
+                  ) : (
+                    <>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                        <circle cx="11" cy="11" r="7" stroke="white" strokeWidth="2.5" />
+                        <path d="M20 20l-3.5-3.5" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
+                      </svg>
+                      Check this website's safety
+                    </>
+                  )}
+                </button>
+              );
+            })()}
 
             {/* Current URL footer */}
         {currentUrl && (
