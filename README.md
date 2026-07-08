@@ -2,7 +2,7 @@
 
 **Video Demo:** [Watch here](https://vimeo.com/1208136832?share=copy&fl=sv&fe=ci)
 
-**Stop before you spend.** Arrête is a Chrome extension that scans sites as you shop, verifies results on Google Shopping, and makes you WAIT before making purchases—all to keep you and your money safe on the internet.
+**Stop before you spend.** Arrête is a Chrome extension that scans sites as you shop, verifies results on Google Shopping, and makes you pause before making purchases—all to keep you and your money safe on the internet.
 
 ---
 
@@ -29,6 +29,8 @@ When you land on a product or checkout page, Arrête automatically:
    2. Enable **Developer Mode** (toggle in the top-right)
    3. Click **Load unpacked**
    4. Select the extracted `arrete-chrome` folder
+
+4. There is a folder called testspoof. inside is a test scam website to test Arrête's functionalitys. Try it out! (the main html file to run is index).
 
 
 ### Scoring signals
