@@ -1,59 +1,70 @@
 # Arrête
 
-A Chrome extension that protects you from shopping scams and suspicious sites.
+**Video Demo:** [Watch here](https://drive.google.com/file/d/1kTD-T9Kf8liByFS7nS19wCiKWNfD2zVY/view)
 
-## Features
+**Stop before you spend.** Arrête is a Chrome extension that scans sites as you shop, verifies results on Google Shopping, and makes you WAIT before making purchases—all to keep you and your money safe on the internet.
 
-- **Automatic detection** — silently scans product pages and shows a verdict badge (green / yellow / red) in the top-right corner
-- **Multi-signal risk scoring** — domain age (RDAP), typosquat similarity to known brands, Google Safe Browsing, and urgency language detection
-- **Expandable Safety Report** — ticket-style receipt showing exactly why a site was flagged
-- **Checkout friction** — on high-risk sites, temporarily disables the checkout button with a 10-second countdown when a payment form is detected
-- **Dashboard popup** — estimated savings, lifetime sites scanned, manual site check
-- **Google Shopping badges** — verified checkmark next to listings from trusted retailers
+---
 
-## Tech Stack
+## What it does
 
-- [WXT](https://wxt.dev) — Chrome Extension MV3 framework
-- React 19 + TypeScript
-- Tailwind CSS v4
-- Shadow DOM isolation for page overlays
+When you land on a product or checkout page, Arrête automatically:
 
-## Setup
+1. **Scores the site** across four signals and shows a danger rating (0–100)
+2. **Intervenes when you try to "Add to Cart" or "Place Order"** on high-risk sites, showing a 10-second countdown before you can proceed — giving you a moment to reconsider
+3. **Verification** (✓) Arrête places a verification checkmark next to trusted retailers on Google Shopping results.
+4. **Lets you manually scan** any site from the popup
 
-```bash
-# Install dependencies
-npm install
 
-# Generate extension icons
-npm run generate-icons
+## Getting started
 
-# Development (hot-reload)
-npm run dev
+### Install Arrête from GitHub Releases
 
-# Production build
-npm run build
-```
+1. **Download the latest release ZIP**
+   - Go to [the Arrête GitHub Releases page](https://github.com/Pattuv/arrete/releases/tag/v.1.0.0) and download the latest `arrete-chrome.zip` file.
+2. **Extract the ZIP file**
+   - Unzip the downloaded file to a folder on your computer.
+3. **Load in Chrome**
+   1. Go to `chrome://extensions`
+   2. Enable **Developer Mode** (toggle in the top-right)
+   3. Click **Load unpacked**
+   4. Select the extracted `arrete-chrome` folder
 
-Load the unpacked extension from `.output/chrome-mv3` in `chrome://extensions` (enable Developer Mode first).
 
-## Optional: Google Safe Browsing API
+### Scoring signals
 
-For phishing/malware detection, add a [Google Safe Browsing API key](https://developers.google.com/safe-browsing/v4/get-started) (free):
+| Signal | Weight | Data source |
+|---|---|---|
+| Domain age | 35% | IANA RDAP (free, no key needed) |
+| URL similarity / typosquatting | 30% | Levenshtein distance vs. known brand list |
+| Google Safe Browsing | 25% | Safe Browsing Lookup API v4 |
+| Urgency language | 10% | DOM text pattern matching |
 
-```bash
-cp .env.example .env
-# Edit .env and set GOOGLE_KEY=your_key_here
-```
+**Risk levels:** Green (0–34) · Yellow (35–64) · Red (65–100)
 
-The extension works without it — the other three signals still produce meaningful scores.
+---
 
-## Risk Score Weights
+## Tech stack
 
-| Signal | Weight | Method |
-|--------|--------|--------|
-| Domain age | 35% | IANA RDAP (free, no key) |
-| Typosquat similarity | 30% | Levenshtein vs 80+ known brands |
-| Google Safe Browsing | 25% | GSB Lookup API v4 (optional key) |
-| Urgency language | 10% | DOM pattern scan |
+| Layer | Technology |
+|---|---|
+| Extension framework | [WXT](https://wxt.dev) (Vite-based, MV3) |
+| UI | React 19 + Tailwind CSS v4 |
+| Language | TypeScript 5 |
+| Build | Vite 8 (via WXT) |
+| Manifest | Chrome MV3 |
 
-Verdict tiers: 🟢 Green `0–34` · 🟡 Yellow `35–64` · 🔴 Red `65–100`
+---
+
+## APIs used
+
+| API | Purpose | Key required |
+|---|---|---|
+| [IANA RDAP](https://rdap.org) (`rdap.org/domain/:domain`) | Domain registration date lookup | No |
+| [Google Safe Browsing v4](https://developers.google.com/safe-browsing/v4) | Known malware check | Yes (free) |
+
+---
+
+## License
+
+MIT
