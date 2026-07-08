@@ -30,7 +30,7 @@ When you land on a product or checkout page, Arrête automatically:
    3. Click **Load unpacked**
    4. Select the extracted `arrete-chrome` folder
 
-4. There is a folder called testspoof. inside is a test scam website to test Arrête's functionalitys. Try it out! (the main html file to run is index).
+4. There is a folder called testspoof. inside is a test scam website to test Arrête's functionality. Try it out! (the main html file to run is index).
 
 
 ### Scoring signals
