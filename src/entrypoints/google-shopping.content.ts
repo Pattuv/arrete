@@ -74,11 +74,17 @@ function injectVerifiedBadges() {
   // Google Shopping's markup changes frequently and uses obfuscated, dynamically
   // generated class names. `.WJMUdc.rw5ecc` is the current (as of this writing)
   // leaf span holding just the plain seller name (e.g. "Best Buy", "Target")
-  // inside the "Popular products" carousel and the dedicated Shopping tab —
-  // confirmed via live DOM inspection. The older selectors below are kept as
-  // harmless fallbacks in case any legacy layout still uses them.
+  // inside the "Popular products" carousel and the dedicated Shopping tab.
+  // Product breakdown panel (right-side panel opened by clicking a product card):
+  //   - `.y4xTjf` — brand name div inside .K0G2dc store row (Sponsored stores)
+  //   - `[data-report-feedback-about-context]` — brand name div in .EHWXMb
+  //     store row (All stores); the attribute value IS the brand name.
+  // `.WJMUdc.rw5ecc` covers the "Popular products" carousel seller labels.
+  // The older selectors below are kept as harmless fallbacks.
   const selectors = [
     '.WJMUdc.rw5ecc',
+    '.y4xTjf',
+    '[data-report-feedback-about-context]',
     '.sh-np__seller-span',
     '.E5ocAb',
     '[aria-label*="Sold by"] span',
